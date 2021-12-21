@@ -35,26 +35,9 @@ export default function Home({ postsPagination }: HomeProps) {
   const [pagination, setPagination] = useState(postsPagination);
 
   function loadMorePosts() {
-    fetch(postsPagination.next_page)
+    fetch(pagination.next_page, {  })
       .then((response) => {
-        const reader = response.body.getReader();
-        const stream = new ReadableStream({
-          start(controller) {
-            function push() {
-              reader.read().then(({ done, value }) => {
-                if (done) {
-                  controller.close();
-                  return;
-                };
-                controller.enqueue(value);
-                push();
-              });
-            };
-            push();
-          },
-        });
-        const result = new Response(stream).json();
-        return result;
+        return response.json();
       })
       .then((result) => {
         const newPagination: PostPagination = {
@@ -118,7 +101,10 @@ export const getStaticProps: GetStaticProps = async () => {
   const prismic = getPrismicClient();
   const postsResponse = await prismic.query(
     Prismic.predicates.at('document.type', 'posts'),
-    { pageSize: 5 },
+    {
+      pageSize: 5,
+      orderings: '[document.first_publication_date desc]',
+    },
   );
   return {
     props: {
